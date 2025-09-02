@@ -1,4 +1,5 @@
-use crate::get_db_connection;
+use crate::database::models::InsertEncounterArgs;
+use crate::database::Repository;
 use crate::live::data::*;
 use crate::live::entity_tracker::{Entity, EntityTracker};
 use crate::live::skill_tracker::{CastEvent, SkillTracker};
@@ -1489,7 +1490,7 @@ impl EncounterState {
 
         let app = self.app.clone();
         task::spawn(async move {
-            let player_infos = if !raid_difficulty.is_empty()
+            let player_info = if !raid_difficulty.is_empty()
                 && raid_difficulty != "Inferno"
                 && raid_difficulty != "Trial"
                 && !encounter.current_boss_name.is_empty()
@@ -1500,11 +1501,8 @@ impl EncounterState {
                 None
             };
 
-            let mut conn = get_db_connection(&app).expect("failed to open database");
-            let tx = conn.transaction().expect("failed to create transaction");
-
-            let encounter_id = insert_data(
-                &tx,
+            let repository = app.state::<Repository>();
+            let args = InsertEncounterArgs {
                 encounter,
                 damage_log,
                 cast_log,
@@ -1513,16 +1511,16 @@ impl EncounterState {
                 party_info,
                 raid_difficulty,
                 region,
-                player_infos,
+                player_info,
                 meter_version,
                 ntp_fight_start,
                 rdps_valid,
                 manual,
                 skill_cast_log,
                 skill_cooldowns,
-            );
+            };
 
-            tx.commit().expect("failed to commit transaction");
+            let encounter_id = repository.insert_data(args).expect("failed to save encounter");
             info!("saved to db");
 
             if raid_clear {

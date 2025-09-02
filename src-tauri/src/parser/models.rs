@@ -5,14 +5,11 @@ use std::str::FromStr;
 
 use bitflags::bitflags;
 use hashbrown::{HashMap, HashSet};
-use lazy_static::lazy_static;
 use log::error;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{Map, Value};
 use serde_with::serde_as;
 use serde_with::DefaultOnError;
-
-pub const DB_VERSION: i32 = 5;
 
 #[derive(Debug, Default, Serialize, Deserialize, PartialEq, Copy, Clone)]
 #[allow(non_camel_case_types)]
@@ -659,34 +656,6 @@ pub struct SearchFilter {
     pub raids_only: bool,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-pub struct Settings {
-    pub general: GeneralSettings,
-    #[serde(flatten)]
-    pub extra: Map<String, Value>,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-pub struct GeneralSettings {
-    pub start_loa_on_start: bool,
-    pub low_performance_mode: bool,
-    #[serde(default = "default_true")]
-    pub auto_iface: bool,
-    pub port: u16,
-    #[serde(default = "default_true")]
-    pub always_on_top: bool,
-    #[serde(default = "default_true")]
-    pub boss_only_damage: bool,
-    #[serde(default = "default_true")]
-    pub hide_meter_on_start: bool,
-    pub hide_logs_on_start: bool,
-    pub mini: bool,
-    #[serde(flatten)]
-    pub extra: Map<String, Value>,
-}
-
 #[derive(Default, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EncounterDbInfo {
@@ -738,10 +707,6 @@ pub struct LocalInfo {
 pub struct LocalPlayer {
     pub name: String,
     pub count: i32,
-}
-
-fn default_true() -> bool {
-    true
 }
 
 fn int_or_string_as_string<'de, D>(deserializer: D) -> Result<String, D::Error>
