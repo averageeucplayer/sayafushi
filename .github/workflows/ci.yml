@@ -23,5 +23,7 @@ jobs:
 
       - uses: taiki-e/install-action@cargo-llvm-cov
         continue-on-error: true
+      - run: mkdir build
+        working-directory: ./web
       - run: cargo llvm-cov --lcov --output-path lcov.info
         working-directory: ./app
