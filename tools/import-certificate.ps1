@@ -1,7 +1,7 @@
 $certTempDirectory = "certificate"
 $base64CertPath = Join-Path $certTempDirectory "cert.txt"
 $pfxCertPath = Join-Path $certTempDirectory "cert.pfx"
-$tauriConfigPath = "app/tauri.conf.json"
+$tauriConfigPath = "app/tauri.windows.conf.json"
 $certStoreLocation = "Cert:\CurrentUser\My"
 
 if (-not (Test-Path $certTempDirectory)) {
