@@ -3,7 +3,12 @@ use std::error::Error;
 use log::*;
 use tauri::{App, AppHandle, Manager};
 
-use crate::{background::{BackgroundWorker, BackgroundWorkerArgs}, constants::DEFAULT_PORT, context::AppContext, settings::{Settings, SettingsManager}, shell::ShellManager, ui::{setup_tray, AppHandleExtensions, WindowExtensions}, updater::{FakeUpdateOptions, UpdateManager}};
+#[cfg(debug_assertions)]
+use crate::updater::FakeUpdateOptions;
+
+use crate::updater::UpdateManager;
+
+use crate::{background::{BackgroundWorker, BackgroundWorkerArgs}, constants::DEFAULT_PORT, context::AppContext, settings::{Settings, SettingsManager}, shell::ShellManager, ui::{setup_tray, AppHandleExtensions, WindowExtensions}};
 
 pub fn setup(app: &mut App) -> Result<(), Box<dyn Error>> {
 

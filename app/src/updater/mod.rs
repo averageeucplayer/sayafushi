@@ -1,13 +1,24 @@
 mod status;
 mod manager;
-mod fake;
-
-pub use status::UpdateStatus;
-pub use manager::UpdateManagerImpl;
-pub use fake::{FakeUpdater, FakeUpdateOptions};
 
 #[cfg(debug_assertions)]
-pub type UpdateManager = UpdateManagerImpl<FakeUpdater>;
+mod fake;
+
+#[cfg(debug_assertions)]
+mod internal {
+    pub use super::fake::{FakeUpdater, FakeUpdateOptions};
+    pub type UpdateManager = super::manager::UpdateManagerImpl<FakeUpdater>;
+}
 
 #[cfg(not(debug_assertions))]
-pub type UpdateManager = UpdateManagerImpl<tauri_plugin_updater::Updater>;
+mod internal {
+    pub use tauri_plugin_updater::Updater;
+    pub type UpdateManager = super::manager::UpdateManagerImpl<Updater>;
+}
+
+pub use internal::UpdateManager;
+
+#[cfg(debug_assertions)]
+pub use internal::FakeUpdateOptions;
+
+pub use status::UpdateStatus;

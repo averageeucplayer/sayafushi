@@ -92,12 +92,14 @@ impl FakeUpdate {
             }
             FakeUpdateOptions::Synthetic { with_total_header, total_size, iterations, delay } => {
                 let total_size_arg = with_total_header.then_some(*total_size);
-                let chunk_size = (*total_size / *iterations as u64) as usize;
-                let last_chunk_size = (*total_size % *iterations as u64) as usize;
+                let total_size = *total_size;
+                let iterations = *iterations;
+                let chunk_size = (total_size / iterations as u64) as usize;
+                let last_chunk_size = (total_size % iterations as u64) as usize;
 
-                let mut data = Vec::with_capacity(*total_size as usize);
+                let mut data = Vec::with_capacity(total_size as usize);
 
-                for i in 0..*iterations {
+                for i in 0..iterations {
                     data.extend(vec![0u8; chunk_size]);
                     on_chunk(i, total_size_arg);
                     sleep(*delay).await;
@@ -105,7 +107,7 @@ impl FakeUpdate {
 
                 if last_chunk_size > 0 {
                     data.extend(vec![0u8; last_chunk_size]);
-                    on_chunk(*iterations, total_size_arg);
+                    on_chunk(last_chunk_size, total_size_arg);
                 }
 
                 on_finish();
