@@ -12,7 +12,7 @@
       },
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
-      "timestampUrl": "",
+      "timestampUrl": "http://timestamp.digicert.com",
       "nsis": {
         "template": "./nsis/installer.nsi",
         "installerIcon": "icons/icon.ico"

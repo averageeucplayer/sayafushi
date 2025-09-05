@@ -3,7 +3,6 @@
 use std::path::PathBuf;
 
 use anyhow::{Result, ensure};
-use single_instance::SingleInstance;
 
 use crate::constants::*;
 
@@ -21,8 +20,6 @@ pub struct AppContext {
 
 impl AppContext {
     pub fn new(version: String) -> Result<Self> {
-        let instance = SingleInstance::new("LOA_LOGS").unwrap();
-        ensure!(instance.is_single(), "Another instance of {} is already running!", "LOA Logs");
 
         let app_path = std::env::current_exe().unwrap();
         let current_dir = app_path.parent().unwrap().to_path_buf();

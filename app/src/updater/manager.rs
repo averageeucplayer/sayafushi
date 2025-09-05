@@ -77,12 +77,15 @@ impl UpdateManagerImpl<Updater> {
 
         let status_chunk = status.clone();
         let status_finish = status.clone();
+        let mut total = 0;
 
         let data = update.download(
             move |chunk, length| {
+                total += chunk;
                 let mut st = status_chunk.lock().unwrap();
-                *st = UpdateStatus::Downloading { chunk, length };
-                app_handle.emit("on-update", UpdateStatus::Downloading { chunk, length }).unwrap();
+                let update_status = UpdateStatus::Downloading { chunk: total, length };
+                *st = update_status.clone();
+                app_handle.emit("on-update", update_status).unwrap();
             },
             move || {
                 let mut st = status_finish.lock().unwrap();

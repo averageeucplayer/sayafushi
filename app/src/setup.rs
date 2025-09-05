@@ -23,7 +23,8 @@ pub fn setup(app: &mut App) -> Result<(), Box<dyn Error>> {
 
     #[cfg(debug_assertions)]
     {
-        let options = FakeUpdateOptions::Latest;
+        // let options = FakeUpdateOptions::Latest;
+        let options = FakeUpdateOptions::default();
         let mut update_manager = UpdateManager::new(app_handle.clone(), options);
         update_manager.check_updates();
         app_handle.manage(update_manager);

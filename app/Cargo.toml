@@ -40,7 +40,6 @@ moka = { version = "0.12.7", features = ["sync"] }
 rsntp = { version = "4.0.0", default-features = false, features = ["chrono"]  }
 flate2 = "1.0.30"
 sysinfo = "0.35.1"
-single-instance = "0.3.3"
 strum = "0.27"
 strum_macros = "0.27"
 # meter-core-fake = { path = "../../lost-metrics-sniffer-stub", optional = true }

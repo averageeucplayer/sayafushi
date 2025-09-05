@@ -28,15 +28,31 @@ export function setUpdateStatus(status: UpdateStatusType) {
         text = "Checking updates...";
         break;
       case "downloading":
-        text = `Downloading newest version ${status.chunk} / ${status.length ?? "?"}`;
+        const downloaded = formatBytes(status.chunk);
+        const total = formatBytes(status.length ?? null);
+        text = `Downloading newest version ${downloaded} / ${total}`;
         break;
       case "latest":
-      case "finished":
-        text = status.type === "latest" ? "Using latest version" : "Finished";
+        text = "Using latest version";
         loading = false;
         break;
     }
 
     return { status, text, loading };
   });
+}
+
+function formatBytes(bytes: number | null): string {
+  if (bytes == null) return "?";
+
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  let i = 0;
+  let value = bytes;
+
+  while (value >= 1024 && i < sizes.length - 1) {
+    value /= 1024;
+    i++;
+  }
+
+  return `${value.toFixed(2)} ${sizes[i]}`;
 }

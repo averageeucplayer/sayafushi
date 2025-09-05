@@ -39,8 +39,8 @@ impl Default for FakeUpdateOptions {
         FakeUpdateOptions::Synthetic {
             with_total_header: true,
             total_size: 200 * 1024 * 1024, // 200 MB
-            iterations: 100,
-            delay: Duration::from_millis(500),
+            iterations: 25,
+            delay: Duration::from_millis(100),
         }
     }
 }
@@ -101,7 +101,7 @@ impl FakeUpdate {
 
                 for i in 0..iterations {
                     data.extend(vec![0u8; chunk_size]);
-                    on_chunk(i, total_size_arg);
+                    on_chunk(chunk_size, total_size_arg);
                     sleep(*delay).await;
                 }
 
@@ -152,22 +152,20 @@ impl UpdateManagerImpl<FakeUpdater> {
                 return;
             }
 
-            let update = FakeUpdate::new(app_handle.clone(), options);
-            {
-                let mut st = status.lock().unwrap();
-                *st = UpdateStatus::Downloading { chunk: 0, length: Some(1024) };
-            }
-
+            let update = FakeUpdate::new(app_handle.clone(), options.clone());
             let status_chunk = status.clone();
             let status_finish = status.clone();
             let app_handle_chunk = app_handle.clone();
             let app_handle_finish = app_handle.clone();
+            let mut total = 0;
 
             let data = update.download(
                 move |chunk, length| {
+                    total += chunk;
                     let mut st = status_chunk.lock().unwrap();
-                    *st = UpdateStatus::Downloading { chunk, length };
-                    app_handle_chunk.emit("on-update", UpdateStatus::Downloading { chunk, length }).unwrap();
+                    let update_status = UpdateStatus::Downloading { chunk: total, length };
+                    *st = update_status.clone();
+                    app_handle_chunk.emit("on-update", update_status).unwrap();
                 },
                 move || {
                     let mut st = status_finish.lock().unwrap();
@@ -177,6 +175,12 @@ impl UpdateManagerImpl<FakeUpdater> {
             ).await.unwrap();
 
             sleep(Duration::from_millis(500)).await;
+
+            if let FakeUpdateOptions::Synthetic { .. } = &options {
+                let mut st = status.lock().unwrap();
+                *st = UpdateStatus::Latest;
+                app_handle.emit("on-update", UpdateStatus::Latest).unwrap();
+            }
 
             update.install(data).unwrap();
         });
