@@ -1,7 +1,7 @@
 .DS_Store
-node_modules
-/build
-/.svelte-kit
+node_modules/
+build/
+.svelte-kit/
 /package
 .env
 .env.*
@@ -58,3 +58,11 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+
+.secrets.json
+cert.*
+docs/book/
+lcov.info
+encounter_*.db;
+~/*
+web/static/images/

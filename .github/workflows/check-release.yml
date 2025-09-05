@@ -1,0 +1,52 @@
+name: Check release
+
+on:
+  workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-22.04
+          - macos-latest
+          - windows-latest
+        include:
+          - os: ubuntu-22.04
+            extra-deps: |
+              sudo apt-get update
+              sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          - os: macos-latest
+            extra-deps: |
+              # Add macOS-specific dependencies if needed
+              echo "macOS dependencies (if any)"
+          - os: windows-latest
+            extra-deps: |
+              # Windows-specific prep steps
+              echo "Windows pre-build prep"
+
+    environment: PROD
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache-dependency-path: web/package-lock.json
+          cache: 'npm'
+
+      - run: npm ci
+        working-directory: ./web
+      - run: 7z x images.7z
+        working-directory: ./web/static
+      - run: npm run build
+        working-directory: ./web
+
+      - name: Prepare environment
+        shell: bash
+        run: |
+          echo "Preparing ${{ matrix.os }}"
+          ${{ matrix.extra-deps }}

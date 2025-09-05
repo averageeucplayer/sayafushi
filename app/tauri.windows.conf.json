@@ -1,0 +1,34 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "resources": [
+      "WinDivert.dll",
+      "meter-data/*.json",
+      "migrations/*.sql"
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "embedBootstrapper"
+      },
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "nsis": {
+        "template": "./nsis/installer.nsi",
+        "installerIcon": "icons/icon.ico"
+      }
+    },
+    "targets": [
+      "nsis"
+    ],
+    "createUpdaterArtifacts": "v1Compatible"
+  },
+  "mainBinaryName": "Sayafushi",
+  "plugins": {
+    "updater": {
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}
