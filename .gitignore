@@ -1,7 +1,7 @@
 .DS_Store
-node_modules
-/build
-/.svelte-kit
+node_modules/
+build/
+.svelte-kit/
 /package
 .env
 .env.*
@@ -9,6 +9,9 @@ node_modules
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 **/target/
+
+# https://github.com/tauri-apps/tauri/discussions/8323#discussioncomment-8984252
+src-tauri/gen/schemas
 
 ### Intellij ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and Webstorm
@@ -55,3 +58,11 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+
+.secrets.json
+cert.*
+docs/book/
+lcov.info
+encounter_*.db;
+~/*
+web/static/images/

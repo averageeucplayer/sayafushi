@@ -1,0 +1,12 @@
+[book]
+authors = ["averageeucplayer"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Sayafushi"
+
+[rust]
+edition = "2024"
+
+[output.html]
+git-repository-url = "https://github.com/averageeucplayer/sayafushi"
