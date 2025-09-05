@@ -62,7 +62,7 @@ jobs:
           WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
 
-      - uses: dtolnay/rust-toolchain@v1.89.0
+      - uses: dtolnay/rust-toolchain@1.89.0
 
       - uses: tauri-apps/tauri-action@v0
         env:

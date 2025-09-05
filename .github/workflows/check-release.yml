@@ -50,3 +50,5 @@ jobs:
         run: |
           echo "Preparing ${{ matrix.os }}"
           ${{ matrix.extra-deps }}
+
+      - uses: dtolnay/rust-toolchain@1.89.0
