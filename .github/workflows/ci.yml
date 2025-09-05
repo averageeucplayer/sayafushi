@@ -9,7 +9,9 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -25,5 +27,8 @@ jobs:
         continue-on-error: true
       - run: mkdir build
         working-directory: ./web
-      - run: cargo llvm-cov --lcov --output-path lcov.info
-        working-directory: ./app
+      - run: ./tools/update-coverage-badge.ps1
+        shell: pwsh
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: update codecov in readme

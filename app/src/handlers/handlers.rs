@@ -8,7 +8,7 @@ use crate::constants::*;
 use crate::data::AssetPreloader;
 use crate::database::models::{GetEncounterPreviewArgs, InsertSyncLogsArgs};
 use crate::database::{Database, Repository};
-use crate::extensions::AppHandleExtensions;
+use crate::ui::AppHandleExtensions;
 use crate::handlers::error::AppError;
 use crate::handlers::models::LoadResult;
 use crate::parser::models::*;

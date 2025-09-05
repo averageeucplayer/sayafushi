@@ -6,8 +6,6 @@ mod constants;
 pub mod parser;
 pub mod database;
 mod handlers;
-mod extensions;
-mod ui;
 mod setup;
 mod logger;
 mod settings;
@@ -15,6 +13,7 @@ mod shell;
 mod background;
 mod data;
 mod updater;
+mod ui;
 
 use anyhow::Result;
 use tauri::Context;

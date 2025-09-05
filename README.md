@@ -1,7 +1,7 @@
 [![GitHub release](https://img.shields.io/github/v/release/averageeucplayer/sayafushi.svg)](https://github.com/averageeucplayer/sayafushi/releases)
 ![Build Status](https://github.com/averageeucplayer/sayafushi/actions/workflows/ci.yml/badge.svg)
 ![Rust Version](https://img.shields.io/badge/rustc-1.89%2B-orange.svg)
-[![codecov](https://codecov.io/gh/averageeucplayer/sayafushi/branch/master/graph/badge.svg?token=4C1ZS2QX5E)](https://codecov.io/gh/averageeucplayer/sayafushi)
+![coverage](https://img.shields.io/badge/coverage-50%25-yellow)
 
 ```
 git clone https://github.com/averageeucplayer/sayafushi.git

@@ -3,7 +3,7 @@ use std::error::Error;
 use log::*;
 use tauri::{App, AppHandle, Manager};
 
-use crate::{background::{BackgroundWorker, BackgroundWorkerArgs}, constants::DEFAULT_PORT, context::AppContext, extensions::{AppHandleExtensions, WindowExtensions}, settings::{Settings, SettingsManager}, shell::ShellManager, ui::setup_tray, updater::UpdateManager};
+use crate::{background::{BackgroundWorker, BackgroundWorkerArgs}, constants::DEFAULT_PORT, context::AppContext, settings::{Settings, SettingsManager}, shell::ShellManager, ui::{setup_tray, AppHandleExtensions, WindowExtensions}, updater::{FakeUpdateOptions, UpdateManager}};
 
 pub fn setup(app: &mut App) -> Result<(), Box<dyn Error>> {
 
@@ -16,8 +16,19 @@ pub fn setup(app: &mut App) -> Result<(), Box<dyn Error>> {
     info!("starting app v{}", context.version);
     setup_tray(app_handle)?;
 
-    let mut update_manager = UpdateManager::new(app_handle.clone());
-    update_manager.check_updates();
+    #[cfg(debug_assertions)]
+    {
+        let options = FakeUpdateOptions::Latest;
+        let mut update_manager = UpdateManager::new(app_handle.clone(), options);
+        update_manager.check_updates();
+        app_handle.manage(update_manager);
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        let mut update_manager = UpdateManager::new(app_handle.clone());
+        update_manager.check_updates();
+        app_handle.manage(update_manager);
+    }
 
     let settings = settings_manager.read().unwrap();
 
@@ -27,7 +38,6 @@ pub fn setup(app: &mut App) -> Result<(), Box<dyn Error>> {
         &shell_manger
     );
 
-    app_handle.manage(update_manager);
     app_handle.manage(shell_manger);
 
     let mut background = BackgroundWorker::new();

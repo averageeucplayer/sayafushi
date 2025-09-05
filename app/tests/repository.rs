@@ -17,7 +17,7 @@ fn should_insert_encounter() {
     let migrations_path = current_dir.join("migrations");
     let version = "1.14.0";
 
-    let database = Database::new(
+    let database = Database::memory(
         database_path,
         &migrations_path,
         version
