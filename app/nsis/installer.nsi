@@ -786,10 +786,12 @@ Section Uninstall
     ${EndIf}
   {{/each}}
 
-
-  ; Delete uninstaller
   Delete "$INSTDIR\uninstall.exe"
 
+  ; Delete uninstaller
+  IfFileExists "$INSTDIR\WinDivert64.sys" 0 +2
+    Delete /REBOOTOK "$INSTDIR\WinDivert64.sys"
+  
   {{#each resources_ancestors}}
   RMDir /REBOOTOK "$INSTDIR\\{{this}}"
   {{/each}}
