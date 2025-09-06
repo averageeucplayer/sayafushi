@@ -1,10 +1,12 @@
+#![allow(dead_code)]
+
 use crate::data::SKILL_BUFF_DATA;
 use crate::live::entity_tracker::Entity;
 use crate::live::party_tracker::PartyTracker;
 use crate::live::status_tracker::StatusEffectBuffCategory::{BattleItem, Bracelet, Elixir, Etc};
 use crate::live::status_tracker::StatusEffectCategory::Debuff;
 use crate::live::status_tracker::StatusEffectShowType::All;
-use crate::live::utils::{get_new_id, is_support_class, is_support_spec};
+use crate::live::utils::get_new_id;
 use crate::models::{EncounterEntity, EntityType};
 use chrono::{DateTime, Duration, Utc};
 use hashbrown::HashMap;

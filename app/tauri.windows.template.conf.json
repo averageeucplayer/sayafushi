@@ -21,7 +21,7 @@
       },
       "wix": {
         "bannerPath":  "./windows/banner.bmp",
-        "dialogImagePath":  "./windows/dialogImage.bmp",
+        "dialogImagePath":  "./windows/dialog.bmp",
         "fragmentPaths":  ["./windows/fragments/registry.wxs"],
         "componentRefs":  ["MyFragmentRegistryEntries"]
       }

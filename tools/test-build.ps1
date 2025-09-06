@@ -31,6 +31,7 @@ try {
     $env:TAURI_LOG_LEVEL="debug"
 
     cargo tauri build --verbose --debug --features "production"
+    # cargo tauri build -- --no-default-features --features "production" --verbose
 
 } catch {
     Write-Error "An error occurred: $_"

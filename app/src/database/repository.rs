@@ -3,7 +3,7 @@ use anyhow::{Ok, Result};
 use hashbrown::HashMap;
 use log::*;
 use r2d2_sqlite::SqliteConnectionManager;
-use rusqlite::{params, params_from_iter, OptionalExtension, ToSql, Transaction};
+use rusqlite::{params, params_from_iter, OptionalExtension, Transaction};
 use serde_json::json;
 
 pub const DB_VERSION: i32 = 5;

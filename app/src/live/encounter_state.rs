@@ -15,7 +15,7 @@ use crate::abstractions::packets::structures::SkillCooldownStruct;
 use rsntp::SntpClient;
 use std::cmp::max;
 use std::default::Default;
-use tauri::{AppHandle, Emitter, Manager, Window, Wry};
+use tauri::{AppHandle, Emitter, Manager};
 use tokio::task;
 
 #[derive(Debug)]

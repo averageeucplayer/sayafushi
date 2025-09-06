@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::data::*;
 use crate::live::encounter_state::EncounterState;
 use crate::live::entity_tracker::{Entity, EntityTracker};

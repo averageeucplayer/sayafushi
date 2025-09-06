@@ -75,3 +75,4 @@ jobs:
           releaseName: "Release ${{ github.ref_name }}"
           releaseDraft: false
           prerelease: false
+          args: "--features production"

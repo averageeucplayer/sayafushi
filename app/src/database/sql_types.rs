@@ -2,8 +2,6 @@ use std::io::Read;
 
 use rusqlite::types::{FromSql, FromSqlResult, ValueRef};
 use flate2::read::GzDecoder;
-use flate2::write::GzEncoder;
-use flate2::Compression;
 use serde::de::DeserializeOwned;
 
 pub struct CompressedJson<T>(pub T);

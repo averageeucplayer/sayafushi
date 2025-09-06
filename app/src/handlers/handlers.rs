@@ -1,6 +1,6 @@
 use log::*;
 use tauri::ipc::Invoke;
-use tauri::{command, generate_handler, AppHandle, Emitter, Manager, State, Window};
+use tauri::{command, generate_handler, AppHandle, Emitter, Manager, State};
 use window_vibrancy::{apply_blur, clear_blur};
 
 use crate::autostart::{AutoLaunch, AutoLaunchManager};

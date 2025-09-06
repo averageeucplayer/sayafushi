@@ -24,7 +24,7 @@ try {
     } else {
         Write-Host "No file specified, running 'cargo llvm-cov --summary-only'..."
         try {
-            $summary = cargo llvm-cov --summary-only 2>&1
+            $summary = cargo llvm-cov --summary-only --features develop 2>&1
         } catch {
             Write-Error "Failed to run cargo llvm-cov: $_"
             exit 1

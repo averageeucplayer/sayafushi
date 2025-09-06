@@ -1,6 +1,10 @@
+#![allow(dead_code)]
+
 use std::{sync::mpsc::{self, Receiver}, thread::{self}};
 use meter_core_fake::packets::structures::SkillDamageEvent;
 use meter_core_fake::packets::opcodes::Pkt;
+
+pub use meter_core_fake::*;
 
 use crate::abstractions::{DamageEncryptionHandler, PacketSource, PacketReceiver};
 use anyhow::Result;

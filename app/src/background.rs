@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use anyhow::Result;
 use std::{path::PathBuf, thread::JoinHandle};
 use log::*;
@@ -98,14 +100,14 @@ impl BackgroundWorker {
         {
             use std::marker::PhantomData;
 
-            use crate::{abstractions::{DefaultDamageEncryptionHandler, FakePacketSource, FakeRegionAccessor}, api::FakeHeartbeatApi, live::{self, StartArgs}};
+            use crate::{abstractions::{DefaultDamageEncryptionHandler, FakePacketSource, FakeRegionAccessor}, api::{FakeHeartbeatApi, FakeStatsApi}, live::{self, StartArgs}};
 
             let heartbeat_api = Box::new(FakeHeartbeatApi::new());
             let region_accessor = Box::new(FakeRegionAccessor::new("EUC".into()));
             let packet_source = FakePacketSource::new();
             let damage_handler = DefaultDamageEncryptionHandler::new();
 
-            let stats_api = Box::new(SnowStatsApi::new(settings.env.stats_api_url));
+            let stats_api = Box::new(FakeStatsApi::new());
 
             app_handle.manage(stats_api);
 
@@ -121,7 +123,7 @@ impl BackgroundWorker {
                 _marker: PhantomData,
             };
 
-            live::start(args).expect("An error occurred whilst running packet processor");;
+            live::start(args).expect("An error occurred whilst running packet processor");
         }
 
         Ok(())

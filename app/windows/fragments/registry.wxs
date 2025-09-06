@@ -1,13 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 	<Fragment>
-	 	<DirectoryRef Id="TARGETDIR">
+	 	<DirectoryRef Id="INSTALLDIR">
 			<Component Id="MyFragmentRegistryEntries" Guid="25dd2407-75b0-431f-9eb8-7ec3ca799f9a">
 				<RemoveFile Id="WinDivert64sys"
                     Name="WinDivert64.sys"
                     On="uninstall"
-                    Directory="TARGETDIR"/>
+                    Directory="INSTALLDIR"/>
 			</Component>
 		</DirectoryRef>
+		<!-- <DirectoryRef Id="ProgramMenuFolder">
+		<Component Id="ApplicationShortcut" Guid="fa243c72-a568-4aee-8852-965a323b2f79">
+			<Condition><![CDATA[CREATE_SHORTCUT="1"]]></Condition>
+
+			<Shortcut Id="MyAppShortcut"
+					Name="MyApp"
+					Target="[INSTALLDIR]MyApp.exe"
+					WorkingDirectory="INSTALLDIR" />
+			<RemoveFolder Id="RemoveStartMenuFolder" Directory="ProgramMenuFolder" On="uninstall"/>
+			<RegistryValue Root="HKCU" Key="Software\MyApp" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+		</Component>
+		</DirectoryRef>
+
+		<UI>
+			<Property Id="CREATE_SHORTCUT" Value="1"/>
+			<Dialog Id="CustomizeDlg" Width="370" Height="270" Title="Customize Installation">
+				<Control Id="ShortcutCheckBox" Type="CheckBox" X="20" Y="60" Width="330" Height="17" Property="CREATE_SHORTCUT" CheckBoxValue="1" Text="Create a Start Menu shortcut" />
+			</Dialog>
+		</UI> -->
 	</Fragment>
 </Wix>
