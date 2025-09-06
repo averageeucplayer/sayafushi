@@ -210,6 +210,13 @@ All core logic has been moved into appropriate modules, including:</p>
 </ul>
 </li>
 <li>
+<p><strong>Settings management:</strong></p>
+<ul>
+<li>On startup, the app will always create default settings from <code>settings.template.json</code> if no settings file is present</li>
+<li>All previously hardcoded API URLs have been moved into the settings file</li>
+</ul>
+</li>
+<li>
 <p><strong>Tauri updater wrapper (DEV):</strong></p>
 <ul>
 <li>Provides a wrapper around the Tauri updater plugin</li>
@@ -219,7 +226,15 @@ All core logic has been moved into appropriate modules, including:</p>
 <li>
 <p><strong>build.rs</strong></p>
 <ul>
-<li>Build manifest only on windows environment</li>
+<li>Applies Windows-specific manifest attributes only in production builds</li>
+</ul>
+</li>
+<li>
+<p><strong>Feature flags:</strong></p>
+<ul>
+<li>Introduced <strong>develop</strong> and <strong>production</strong> features</li>
+<li><strong>develop</strong> → allows use of fake services regardless of debug/release mode</li>
+<li><strong>production</strong> → applies Windows attributes to the binary</li>
 </ul>
 </li>
 <li>
