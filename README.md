@@ -14,7 +14,7 @@ npm ci
 cd static
 7z x images.7z
 cd ../..
-cargo tauri dev
+cargo tauri dev --features develop
 ```
 
 
