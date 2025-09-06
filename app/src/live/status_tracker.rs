@@ -5,16 +5,12 @@ use crate::live::status_tracker::StatusEffectBuffCategory::{BattleItem, Bracelet
 use crate::live::status_tracker::StatusEffectCategory::Debuff;
 use crate::live::status_tracker::StatusEffectShowType::All;
 use crate::live::utils::{get_new_id, is_support_class, is_support_spec};
-use crate::parser::models::{EncounterEntity, EntityType};
+use crate::models::{EncounterEntity, EntityType};
 use chrono::{DateTime, Duration, Utc};
 use hashbrown::HashMap;
-use meter_core::packets::structures::{PCStruct, StatusEffectData};
+use crate::abstractions::packets::structures::{PCStruct, StatusEffectData};
 use std::cell::RefCell;
 use std::rc::Rc;
-
-pub mod meter_core {
-    pub use meter_core_fake::*;
-}
 
 // expire buff after 1 min delay
 const TIMEOUT_DELAY_MS: i64 = 60_000;
@@ -205,7 +201,7 @@ impl StatusTracker {
     ) -> (Vec<StatusEffectDetails>, Vec<StatusEffectDetails>) {
         let timestamp = Utc::now();
 
-        let use_party_for_source = if source_entity.entity_type == EntityType::PLAYER {
+        let use_party_for_source = if source_entity.entity_type == EntityType::Player {
             self.should_use_party_status_effect(source_entity.character_id, local_character_id)
         } else {
             false
@@ -221,7 +217,7 @@ impl StatusTracker {
         let status_effects_on_source =
             self.actually_get_status_effects(source_id, source_type, timestamp);
 
-        let use_party_for_target = if source_entity.entity_type == EntityType::PLAYER {
+        let use_party_for_target = if source_entity.entity_type == EntityType::Player {
             self.should_use_party_status_effect(target_entity.character_id, local_character_id)
         } else {
             false

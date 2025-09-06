@@ -1,9 +1,7 @@
 pub mod traits;
-pub mod heartbeat;
 pub mod region;
 
 pub use traits::*;
-pub use heartbeat::*;
 pub use region::*;
 
 #[cfg(feature = "meter-core")]

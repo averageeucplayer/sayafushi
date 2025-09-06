@@ -1,13 +1,23 @@
 use anyhow::Result;
-use std::{path::PathBuf, sync::{atomic::{AtomicBool, Ordering}, Arc}, thread::{self, JoinHandle}};
+use std::{path::PathBuf, thread::JoinHandle};
 use log::*;
 use tauri::{AppHandle, Manager};
-use tokio::runtime::Runtime;
 
 use crate::{data::AssetPreloader, settings::Settings, updater::UpdateManager};
 
+macro_rules! background_worker {
+    ($name:expr, $args:expr, $body:expr) => {
+        std::thread::Builder::new()
+            .name($name.to_string())
+            .spawn(move || {
+                let rt = tokio::runtime::Runtime::new().unwrap();
+                rt.block_on(async move { $body($args).await })
+            })
+    };
+}
+
 pub struct BackgroundWorkerArgs {
-    pub app: AppHandle,
+    pub app_handle: AppHandle,
     pub port: u16,
     pub region_file_path: PathBuf,
     pub settings: Settings,
@@ -23,60 +33,96 @@ impl BackgroundWorker {
 
     pub fn start(&mut self, args: BackgroundWorkerArgs) -> Result<()> {
       
-        let builder = thread::Builder::new().name("background-worker".to_string());
-
-        let handle = builder.spawn(move || Self::inner(args))?;
+        let handle = background_worker!("background-worker", args, Self::inner)?;
 
         self.0 = Some(handle);
 
         Ok(())
     }
 
-    fn inner(args: BackgroundWorkerArgs) -> Result<()> {
+    async fn inner(args: BackgroundWorkerArgs) -> Result<()> {
         let BackgroundWorkerArgs {
-            app,
+            app_handle,
             port,
             region_file_path,
             settings,
             version
         } = args;
 
-        // only start listening when there's no update, otherwise unable to remove driver
-        // while !update_checked.load(Ordering::Relaxed) {
-        //     std::thread::sleep(std::time::Duration::from_millis(100));
-        // }
+        let asset_preloader = app_handle.state::<AssetPreloader>();
+        info!("waiting for assets to load");
+        asset_preloader.wait().unwrap();
 
-        let rt = Runtime::new()?;
+        info!("waiting for update manager");
+        let update_manager = app_handle.state::<UpdateManager>();
+        update_manager.wait().await.unwrap();
+
+        info!("listening on port: {}", port);
         
-        rt.block_on(async move {
-            let asset_preloader = app.state::<AssetPreloader>();
-            info!("waiting for assets to load");
-            asset_preloader.wait().unwrap();
+        #[cfg(feature = "meter-core")]
+        {
+            use std::marker::PhantomData;
 
-            info!("waiting for update manager");
-            let update_manager = app.state::<UpdateManager>();
-            update_manager.wait().await.unwrap();
+            use crate::{abstractions::{DefaultRegionAccessor, SnowDamageEncryptionHandler, WindivertPacketCapture}, api::{SnowHeartbeatApi, SnowStatsApi}, live::{self, StartArgs}};
 
-            info!("listening on port: {}", port);
+            let heartbeat_api = Box::new(SnowHeartbeatApi::new(settings.env.hearbeat_api_url.clone()));
+            let region_accessor = Box::new(DefaultRegionAccessor::new(region_file_path.clone().into()));
+            let packet_source = WindivertPacketCapture::new(region_file_path.display().to_string());
+            let damage_handler = SnowDamageEncryptionHandler::new();
+            let stats_api = {
+                use crate::local::LocalPlayerRepository;
+
+                let local: tauri::State<'_, LocalPlayerRepository> = app_handle.state::<LocalPlayerRepository>();
+                let local_info = local.read()?;
+                Box::new(SnowStatsApi::new(settings.env.stats_api_url.clone(), local_info.client_id))
+            };
+
+            app_handle.manage(stats_api);
             
-            #[cfg(feature = "meter-core")]
-            {
-                use crate::live;
+            let args = StartArgs  {
+                app_handle,
+                port,
+                settings,
+                version,
+                heartbeat_api,
+                packet_source,
+                region_accessor,
+                damage_handler,
+                _marker: PhantomData,
+            };
 
-                live::start(app, port, Some(settings)).map_err(|e| {
-                    error!("unexpected error occurred in parser: {e}");
-                })
-            }
+            live::start(args).expect("An error occurred whilst running packet processor");
+        }
 
-            #[cfg(feature = "meter-core-fake")]
-            {
-                use crate::live;
+        #[cfg(feature = "meter-core-fake")]
+        {
+            use std::marker::PhantomData;
 
-                live::start(app, port, Some(settings)).map_err(|e| {
-                    error!("unexpected error occurred in parser: {e}");
-                })
-            }
-        }).unwrap();
+            use crate::{abstractions::{DefaultDamageEncryptionHandler, FakePacketSource, FakeRegionAccessor}, api::FakeHeartbeatApi, live::{self, StartArgs}};
+
+            let heartbeat_api = Box::new(FakeHeartbeatApi::new());
+            let region_accessor = Box::new(FakeRegionAccessor::new("EUC".into()));
+            let packet_source = FakePacketSource::new();
+            let damage_handler = DefaultDamageEncryptionHandler::new();
+
+            let stats_api = Box::new(SnowStatsApi::new(settings.env.stats_api_url));
+
+            app_handle.manage(stats_api);
+
+            let args = StartArgs {
+                app_handle,
+                port,
+                settings,
+                version,
+                heartbeat_api,
+                packet_source,
+                region_accessor,
+                damage_handler,
+                _marker: PhantomData,
+            };
+
+            live::start(args).expect("An error occurred whilst running packet processor");;
+        }
 
         Ok(())
     }

@@ -1,5 +1,3 @@
-use std::fs;
-
 fn main() {
     #[cfg(debug_assertions)]
     {
@@ -7,7 +5,7 @@ fn main() {
         tauri_build::build();
     }
 
-    #[cfg(all(not(debug_assertions), target_os = "windows"))]
+    #[cfg(all(not(debug_assertions), not(feature = "develop"), target_os = "windows"))]
     {
         use std::fs;
         let mut windows = tauri_build::WindowsAttributes::new();

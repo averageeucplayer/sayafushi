@@ -3,7 +3,7 @@ use serde::de::DeserializeOwned;
 use hashbrown::{HashMap, HashSet};
 use anyhow::{anyhow, Result};
 
-use crate::parser::models::*;
+use crate::models::*;
 
 pub static COMBAT_EFFECT_DATA: OnceLockWrapper<HashMap<i32, CombatEffectData>> = OnceLockWrapper::new();
 pub static ENGRAVING_DATA: OnceLockWrapper<HashMap<u32, EngravingData>> = OnceLockWrapper::new();

@@ -2773,6 +2773,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "meter-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "byteorder",
+ "chrono",
+ "env_logger",
+ "etherparse",
+ "ffi-opaque",
+ "hashbrown 0.15.5",
+ "ipnet",
+ "lazy_static",
+ "libc",
+ "log",
+ "lz4_flex",
+ "serde",
+ "serde_json",
+ "snap",
+ "socket2 0.5.10",
+ "sodiumoxide",
+ "thiserror 1.0.69",
+ "windows 0.48.0",
+]
+
+[[package]]
 name = "meter-core-fake"
 version = "0.1.0"
 source = "git+https://github.com/averageeucplayer/lost-metrics-sniffer-stub#d67cdf3d8888360a92f54c83ee34f054cf33a273"
@@ -4434,6 +4460,7 @@ name = "sayafushi"
 version = "0.0.1"
 dependencies = [
  "anyhow",
+ "async-trait",
  "auto-launch",
  "bitflags 2.9.4",
  "chrono",
@@ -4441,6 +4468,7 @@ dependencies = [
  "flexi_logger",
  "hashbrown 0.15.5",
  "log",
+ "meter-core",
  "meter-core-fake",
  "moka",
  "r2d2",

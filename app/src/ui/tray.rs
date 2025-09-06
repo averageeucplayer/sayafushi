@@ -1,7 +1,4 @@
-use std::str::FromStr;
-
-use log::*;
-use anyhow::{anyhow, Result};
+use anyhow::anyhow;
 use strum::EnumProperty;
 use strum_macros::{AsRefStr, EnumProperty, EnumString};
 use tauri::{menu::{Menu, MenuBuilder}, AppHandle, Runtime};

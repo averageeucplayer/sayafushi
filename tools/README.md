@@ -32,3 +32,9 @@ $env:RUST_LOG="tauri=debug"
 $env:TAURI_LOG_LEVEL="debug"
 cargo tauri build --verbose
 ```
+
+```
+git checkout master
+git merge -X theirs develop
+git checkout develop -- path
+```

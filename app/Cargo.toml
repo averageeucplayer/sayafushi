@@ -42,8 +42,11 @@ flate2 = "1.0.30"
 sysinfo = "0.35.1"
 strum = "0.27"
 strum_macros = "0.27"
+async-trait = "0.1.89"
 # meter-core-fake = { path = "../../lost-metrics-sniffer-stub", optional = true }
 meter-core-fake = { git = "https://github.com/averageeucplayer/lost-metrics-sniffer-stub", optional = true }
+meter-core = { path = "../../lost-metrics-sniffer-stub", optional = true }
+# meter-core = { git = "https://github.com/snoww/meter-core-rs", optional = true }
 
 [dev-dependencies]
 rand = "0.9.0"
@@ -66,13 +69,16 @@ auto-launch = "0.5.0"
 [features]
 # by default Tauri runs in production mode
 # when `tauri dev` runs it is executed with `cargo run --no-default-features` if `devPath` is an URL
-default = ["custom-protocol", "meter-core-fake"]
+default = ["custom-protocol", "meter-core", "develop"]
+production = ["custom-protocol", "meter-core"]
 # this feature is used for production builds where `devPath` points to the filesystem
 # DO NOT remove this
 custom-protocol = ["tauri/custom-protocol"]
 # If this feature is set, it will require meter-core and allow for live logs. Otherwise, only
 # older logs will be shown.
+meter-core = ["dep:meter-core"]
 meter-core-fake = ["dep:meter-core-fake"]
+develop = []
 
 [profile.release]
 panic = "abort" # Strip expensive panic clean-up logic

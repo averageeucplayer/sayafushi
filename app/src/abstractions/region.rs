@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-pub trait RegionAcessor {
+pub trait RegionAcessor: Send + Sync {
     fn get(&self) -> Option<String>;
 }
 

@@ -8,7 +8,7 @@ use serde_json::json;
 
 pub const DB_VERSION: i32 = 5;
 
-use crate::{database::{models::*, queries::*, utils::*}, live::utils::compress_json, parser::models::*};
+use crate::{database::{models::*, queries::*, utils::*}, live::utils::compress_json, models::*};
 pub struct Repository(r2d2::Pool<SqliteConnectionManager>);
 
 impl Repository {
@@ -423,7 +423,7 @@ impl Repository {
         } = args;
 
         let mut players: Vec<_> = encounter.entities.values()
-            .filter(|e| ((e.entity_type == EntityType::PLAYER && e.class_id != 0 && e.max_hp > 0)
+            .filter(|e| ((e.entity_type == EntityType::Player && e.class_id != 0 && e.max_hp > 0)
                 || e.name == encounter.local_player)
                 && e.damage_stats.damage_dealt > 0)
             .collect();

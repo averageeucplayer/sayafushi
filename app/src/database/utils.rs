@@ -5,9 +5,9 @@ use hashbrown::HashMap;
 use crate::data::GEM_SKILL_MAP;
 use crate::database::models::*;
 use crate::database::sql_types::{CompressedJson, JsonColumn};
-use crate::live::stats_api::InspectInfo;
-use crate::parser::models::*;
-use crate::{constants::{WINDOW_MS, WINDOW_S}, live::utils::*, parser::models::*};
+use crate::api::InspectInfo;
+use crate::models::*;
+use crate::{constants::{WINDOW_MS, WINDOW_S}, live::utils::*};
 
 pub fn build_delete_encounters_query(ids_len: usize) -> String {
     let placeholders = std::iter::repeat("?").take(ids_len).collect::<Vec<_>>().join(",");
@@ -262,7 +262,7 @@ pub fn map_entity(row: &rusqlite::Row, is_compressed: bool) -> rusqlite::Result<
         skills,
         damage_stats,
         skill_stats,
-        entity_type: EntityType::from_str(entity_type.as_str()).unwrap_or(EntityType::UNKNOWN),
+        entity_type: EntityType::from_str(entity_type.as_str()).unwrap_or_default(),
         npc_id: row.get(EncounterEntityColumns::NPC_ID)?,
         character_id: row.get(EncounterEntityColumns::CHARACTER_ID).unwrap_or_default(),
         engraving_data,
@@ -370,10 +370,10 @@ pub fn compute_support_buffs(
 }
 
 pub fn should_insert_entity(entity: &EncounterEntity, local_player: &str) -> bool {
-    ((entity.entity_type == EntityType::PLAYER && entity.class_id > 0)
+    ((entity.entity_type == EntityType::Player && entity.class_id > 0)
         || entity.name == local_player
-        || entity.entity_type == EntityType::ESTHER
-        || (entity.entity_type == EntityType::BOSS && entity.max_hp > 0))
+        || entity.entity_type == EntityType::Esther
+        || (entity.entity_type == EntityType::Boss && entity.max_hp > 0))
         && entity.damage_stats.damage_dealt > 0
 }
 
@@ -383,8 +383,10 @@ pub fn update_entity_stats(
     fight_end: i64,
     damage_log: &HashMap<String, Vec<(i64, i64)>>,
 ) {
-    if entity.entity_type != EntityType::PLAYER { return; }
+    if entity.entity_type != EntityType::Player { return; }
+
     let intervals = generate_intervals(fight_start, fight_end);
+    
     if let Some(player_log) = damage_log.get(&entity.name) {
         for interval in intervals {
             let start = fight_start + interval - WINDOW_MS;

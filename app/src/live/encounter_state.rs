@@ -3,30 +3,26 @@ use crate::database::Repository;
 use crate::data::*;
 use crate::live::entity_tracker::{Entity, EntityTracker};
 use crate::live::skill_tracker::{CastEvent, SkillTracker};
-use crate::live::stats_api::{InspectInfo, StatsApi};
+use crate::api::{GetCharacterInfoArgs, InspectInfo, StatsApi};
 use crate::live::status_tracker::StatusEffectDetails;
 use crate::live::utils::*;
-use crate::parser::models::*;
+use crate::models::*;
 use chrono::Utc;
 use hashbrown::HashMap;
 use log::{info, warn};
-use meter_core::packets::common::SkillMoveOptionData;
-use meter_core::packets::definitions::PKTIdentityGaugeChangeNotify;
-use meter_core::packets::structures::SkillCooldownStruct;
-use moka::sync::Cache;
+use crate::abstractions::packets::common::SkillMoveOptionData;
+use crate::abstractions::packets::structures::SkillCooldownStruct;
 use rsntp::SntpClient;
 use std::cmp::max;
 use std::default::Default;
 use tauri::{AppHandle, Emitter, Manager, Window, Wry};
 use tokio::task;
 
-pub mod meter_core {
-    pub use meter_core_fake::*;
-}
-
 #[derive(Debug)]
 pub struct EncounterState {
-    pub app: AppHandle,
+    pub app_handle: AppHandle,
+    pub version: String,
+    pub client_id: String,
     pub encounter: Encounter,
     pub resetting: bool,
     pub boss_dead_update: bool,
@@ -58,9 +54,14 @@ pub struct EncounterState {
 }
 
 impl EncounterState {
-    pub fn new(window: AppHandle) -> EncounterState {
+    pub fn new(
+        version: String,
+        client_id: String,
+        app_handle: AppHandle) -> EncounterState {
         EncounterState {
-            app: window,
+            version,
+            client_id,
+            app_handle,
             encounter: Encounter::default(),
             resetting: false,
             raid_clear: false,
@@ -116,8 +117,8 @@ impl EncounterState {
         self.custom_id_map = HashMap::new();
 
         for (key, entity) in clone.entities.into_iter().filter(|(_, e)| {
-            e.entity_type == EntityType::PLAYER
-                || (keep_bosses && e.entity_type == EntityType::BOSS)
+            e.entity_type == EntityType::Player
+                || (keep_bosses && e.entity_type == EntityType::Boss)
         }) {
             self.encounter.entities.insert(
                 key,
@@ -172,10 +173,10 @@ impl EncounterState {
         }
     }
 
-    pub fn on_init_env(&mut self, entity: Entity, stats_api: &StatsApi) {
+    pub fn on_init_env(&mut self, entity: Entity) {
         // if not already saved to db, we save again
         if !self.saved && !self.encounter.current_boss_name.is_empty() {
-            self.save_to_db(stats_api, false);
+            self.save_to_db(false);
         }
 
         // replace or insert local player
@@ -196,22 +197,22 @@ impl EncounterState {
             e.name == self.encounter.local_player || e.damage_stats.damage_dealt > 0
         });
 
-        self.app
+        self.app_handle
             .emit("zone-change", "")
             .expect("failed to emit zone-change");
 
         self.soft_reset(false);
     }
 
-    pub fn on_phase_transition(&mut self, phase_code: i32, stats_api: &mut StatsApi) {
-        self.app
+    pub fn on_phase_transition(&mut self, phase_code: i32) {
+        self.app_handle
             .emit("phase-transition", phase_code)
             .expect("failed to emit phase-transition");
 
         match phase_code {
             0 | 2 | 3 | 4 => {
                 if !self.encounter.current_boss_name.is_empty() {
-                    self.save_to_db(stats_api, false);
+                    self.save_to_db(false);
                     self.saved = true;
                 }
                 self.resetting = true;
@@ -260,14 +261,14 @@ impl EncounterState {
             .entities
             .entry(entity_name.clone())
             .and_modify(|e| {
-                if entity.entity_type != EntityType::BOSS && e.entity_type != EntityType::BOSS {
+                if entity.entity_type != EntityType::Boss && e.entity_type != EntityType::Boss {
                     e.npc_id = entity.npc_id;
                     e.id = entity.id;
                     e.current_hp = hp;
                     e.max_hp = max_hp;
-                } else if entity.entity_type == EntityType::BOSS && e.entity_type == EntityType::NPC
+                } else if entity.entity_type == EntityType::Boss && e.entity_type == EntityType::Npc
                 {
-                    e.entity_type = EntityType::BOSS;
+                    e.entity_type = EntityType::Boss;
                     e.npc_id = entity.npc_id;
                     e.id = entity.id;
                     e.current_hp = hp;
@@ -282,7 +283,7 @@ impl EncounterState {
             });
 
         if let Some(npc) = self.encounter.entities.get(&entity_name) {
-            if npc.entity_type == EntityType::BOSS {
+            if npc.entity_type == EntityType::Boss {
                 // if current encounter has no boss, we set the boss
                 // if current encounter has a boss, we check if new boss has more max hp, or if current boss is dead
                 self.encounter.current_boss_name = if self
@@ -306,16 +307,16 @@ impl EncounterState {
             .entry(dead_entity.name.clone())
             .or_insert_with(|| encounter_entity_from_entity(dead_entity));
 
-        if (dead_entity.entity_type != EntityType::PLAYER
-            && dead_entity.entity_type != EntityType::BOSS)
+        if (dead_entity.entity_type != EntityType::Player
+            && dead_entity.entity_type != EntityType::Boss)
             || entity.id != dead_entity.id
-            || (entity.entity_type == EntityType::BOSS && entity.npc_id != dead_entity.npc_id)
+            || (entity.entity_type == EntityType::Boss && entity.npc_id != dead_entity.npc_id)
         {
             return;
         }
 
-        if entity.entity_type == EntityType::BOSS
-            && dead_entity.entity_type == EntityType::BOSS
+        if entity.entity_type == EntityType::Boss
+            && dead_entity.entity_type == EntityType::Boss
             && entity.name == self.encounter.current_boss_name
             && !entity.is_dead
         {
@@ -424,7 +425,7 @@ impl EncounterState {
             });
 
         if entity.class_id == 0
-            && source_entity.entity_type == EntityType::PLAYER
+            && source_entity.entity_type == EntityType::Player
             && source_entity.class_id > 0
         {
             entity.class_id = source_entity.class_id;
@@ -564,7 +565,7 @@ impl EncounterState {
 
         let mut skill_effect_id = damage_data.skill_effect_id;
         let is_battle_item = is_battle_item(&proj_entity.skill_effect_id, "attack");
-        if proj_entity.entity_type == EntityType::PROJECTILE && is_battle_item {
+        if proj_entity.entity_type == EntityType::Projectile && is_battle_item {
             skill_effect_id = proj_entity.skill_effect_id;
         }
 
@@ -606,10 +607,10 @@ impl EncounterState {
         // check if target is boss and not player
         // check if target is player and source is boss
         if self.boss_only_damage
-            && ((target_entity.entity_type != EntityType::BOSS
-                && target_entity.entity_type != EntityType::PLAYER)
-                || (target_entity.entity_type == EntityType::PLAYER
-                    && source_entity.entity_type != EntityType::BOSS))
+            && ((target_entity.entity_type != EntityType::Boss
+                && target_entity.entity_type != EntityType::Player)
+                || (target_entity.entity_type == EntityType::Player
+                    && source_entity.entity_type != EntityType::Boss))
         {
             return;
         }
@@ -617,7 +618,7 @@ impl EncounterState {
         if self.encounter.fight_start == 0 {
             self.encounter.fight_start = timestamp;
             self.skill_tracker.fight_start = timestamp;
-            if source_entity.entity_type == EntityType::PLAYER && damage_data.skill_id > 0 {
+            if source_entity.entity_type == EntityType::Player && damage_data.skill_id > 0 {
                 self.skill_tracker.new_cast(
                     source_entity.id,
                     damage_data.skill_id,
@@ -633,7 +634,7 @@ impl EncounterState {
             };
 
             self.encounter.boss_only_damage = self.boss_only_damage;
-            self.app
+            self.app_handle
                 .emit("raid-start", timestamp)
                 .expect("failed to emit raid-start");
         }
@@ -648,7 +649,7 @@ impl EncounterState {
         }
 
         let mut damage = damage_data.damage + damage_data.shield_damage.unwrap_or(0);
-        if target_entity.entity_type != EntityType::PLAYER && damage_data.target_current_hp < 0 {
+        if target_entity.entity_type != EntityType::Player && damage_data.target_current_hp < 0 {
             damage += damage_data.target_current_hp;
         }
 
@@ -743,7 +744,7 @@ impl EncounterState {
             skill_hit.front_attack = true;
         }
 
-        if source_entity.entity_type == EntityType::PLAYER {
+        if source_entity.entity_type == EntityType::Player {
             self.encounter.encounter_damage_stats.total_damage_dealt += damage;
             self.encounter.encounter_damage_stats.top_damage_dealt = max(
                 self.encounter.encounter_damage_stats.top_damage_dealt,
@@ -954,7 +955,7 @@ impl EncounterState {
             }
         }
 
-        if target_entity.entity_type == EntityType::PLAYER {
+        if target_entity.entity_type == EntityType::Player {
             self.encounter.encounter_damage_stats.total_damage_taken += damage;
             self.encounter.encounter_damage_stats.top_damage_taken = max(
                 self.encounter.encounter_damage_stats.top_damage_taken,
@@ -962,7 +963,7 @@ impl EncounterState {
             );
         }
         // update current_boss
-        else if target_entity.entity_type == EntityType::BOSS {
+        else if target_entity.entity_type == EntityType::Boss {
             self.encounter
                 .current_boss_name
                 .clone_from(&target_entity.name);
@@ -1029,7 +1030,7 @@ impl EncounterState {
         movement: &SkillMoveOptionData,
         timestamp: i64,
     ) {
-        if victim_entity.entity_type != EntityType::PLAYER {
+        if victim_entity.entity_type != EntityType::Player {
             // we don't care about npc knockups
             return;
         }
@@ -1261,7 +1262,7 @@ impl EncounterState {
     // }
 
     pub fn on_boss_shield(&mut self, target_entity: &Entity, shield: u64) {
-        if target_entity.entity_type == EntityType::BOSS
+        if target_entity.entity_type == EntityType::Boss
             && target_entity.name == self.encounter.current_boss_name
         {
             self.encounter
@@ -1280,8 +1281,8 @@ impl EncounterState {
         buff_id: u32,
         shield: u64,
     ) {
-        if source_entity.entity_type == EntityType::PLAYER
-            && target_entity.entity_type == EntityType::PLAYER
+        if source_entity.entity_type == EntityType::Player
+            && target_entity.entity_type == EntityType::Player
         {
             if !self
                 .encounter
@@ -1375,8 +1376,8 @@ impl EncounterState {
         buff_id: u32,
         shield_removed: u64,
     ) {
-        if source_entity.entity_type == EntityType::PLAYER
-            && target_entity.entity_type == EntityType::PLAYER
+        if source_entity.entity_type == EntityType::Player
+            && target_entity.entity_type == EntityType::Player
         {
             self.encounter
                 .encounter_damage_stats
@@ -1443,7 +1444,7 @@ impl EncounterState {
         }
     }
 
-    pub fn save_to_db(&mut self, stats_api: &StatsApi, manual: bool) {
+    pub fn save_to_db(&mut self, manual: bool) {
         if !manual
             && (self.encounter.fight_start == 0
                 || self.encounter.current_boss_name.is_empty()
@@ -1452,7 +1453,7 @@ impl EncounterState {
                     .entities
                     .contains_key(&self.encounter.current_boss_name)
                 || !self.encounter.entities.values().any(|e| {
-                    e.entity_type == EntityType::PLAYER && e.damage_stats.damage_dealt > 0
+                    e.entity_type == EntityType::Player && e.damage_stats.damage_dealt > 0
                 }))
         {
             info!("not saving to db, no players with damage dealt");
@@ -1472,7 +1473,7 @@ impl EncounterState {
         let party_info = self.party_info.clone();
         let raid_difficulty = self.raid_difficulty.clone();
         let region = self.region.clone();
-        let meter_version = self.app.app_handle().package_info().version.to_string();
+        let version = self.version.to_string();
 
         let ntp_fight_start = self.ntp_fight_start;
 
@@ -1480,7 +1481,6 @@ impl EncounterState {
 
         let skill_cast_log = self.skill_tracker.get_cast_log();
         let skill_cooldowns = self.skill_tracker.skill_cooldowns.clone();
-        let stats_api = stats_api.clone();
 
         // debug_print(format_args!("skill cast log:\n{}", serde_json::to_string(&skill_cast_log).unwrap()));
 
@@ -1492,20 +1492,20 @@ impl EncounterState {
 
         encounter.current_boss_name = update_current_boss_name(&encounter.current_boss_name);
 
-        let app = self.app.clone();
+        let client_id = self.client_id.clone();
+        let app_handle = self.app_handle.clone();
         task::spawn(async move {
-            let player_info = if !raid_difficulty.is_empty()
-                && raid_difficulty != "Inferno"
-                && raid_difficulty != "Trial"
-                && !encounter.current_boss_name.is_empty()
-            {
-                info!("fetching player info");
-                stats_api.get_character_info(&encounter).await
-            } else {
-                None
-            };
+            let stats_api = app_handle.state::<Box<dyn StatsApi>>();
 
-            let repository = app.state::<Repository>();
+            let player_info = fetch_player_info(
+                stats_api.as_ref(),
+                &encounter,
+                &version,
+                &client_id,
+                &raid_difficulty,
+            ).await;
+
+            let repository = app_handle.state::<Repository>();
             let args = InsertEncounterArgs {
                 encounter,
                 damage_log,
@@ -1516,7 +1516,7 @@ impl EncounterState {
                 raid_difficulty,
                 region,
                 player_info,
-                meter_version,
+                meter_version: version,
                 ntp_fight_start,
                 rdps_valid,
                 manual,
@@ -1528,7 +1528,7 @@ impl EncounterState {
             info!("saved to db");
 
             if raid_clear {
-                app.emit("clear-encounter", encounter_id)
+                app_handle.emit("clear-encounter", encounter_id)
                     .expect("failed to emit clear-encounter");
             }
         });
@@ -1538,4 +1538,57 @@ impl EncounterState {
 fn status_effect_is_infinite(status_effect: &StatusEffectDetails) -> bool {
     // infinite if duration is (sub-)zero or longer than an hour
     status_effect.expiration_delay <= 0.0 || status_effect.expiration_delay > 3600.0
+}
+
+async fn fetch_player_info(
+    stats_api: &dyn StatsApi,
+    encounter: &Encounter,
+    version: &str,
+    client_id: &str,
+    raid_difficulty: &str,
+) -> Option<HashMap<String, InspectInfo>> {
+
+    if raid_difficulty.is_empty()
+        || raid_difficulty == "Inferno"
+        || raid_difficulty == "Trial"
+        || encounter.current_boss_name.is_empty()
+    {
+        return None;
+    }
+
+    info!("fetching player info");
+
+    let raid_name = encounter
+        .entities
+        .get(&encounter.current_boss_name)
+        .and_then(|boss| boss_to_raid_map(&encounter.current_boss_name, boss.max_hp));
+
+    let players: Vec<String> = encounter
+        .entities
+        .iter()
+        .filter_map(|(_, e)| {
+            if is_valid_player(e) {
+                Some(e.name.clone())
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    if players.len() > 16 {
+        return None;
+    }
+
+    let args = GetCharacterInfoArgs {
+        client_id: client_id.to_string(),
+        version: version.to_string(),
+        region: encounter.region.clone().unwrap_or_default(),
+        raid_name: raid_name.unwrap_or_default(),
+        boss: encounter.current_boss_name.clone(),
+        characters: players,
+        difficulty: encounter.difficulty.clone(),
+        cleared: encounter.cleared,
+    };
+
+    stats_api.get_character_info(args).await
 }

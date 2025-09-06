@@ -1,19 +1,20 @@
 use crate::data::*;
-use crate::live::debug_print;
-use crate::live::entity_tracker::Entity;
+use crate::live::encounter_state::EncounterState;
+use crate::live::entity_tracker::{Entity, EntityTracker};
+use crate::live::id_tracker::IdTracker;
+use crate::live::party_tracker::PartyTracker;
 use crate::live::skill_tracker::{CastEvent, SkillTracker};
-use crate::live::stats_api::InspectInfo;
-use crate::live::status_tracker::StatusEffectDetails;
-use crate::parser::models::*;
+use log::*;
+use crate::live::status_tracker::{StatusEffectDetails, StatusEffectTargetType};
+use crate::models::*;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use hashbrown::HashMap;
-use rusqlite::{params, Transaction};
 use serde::Serialize;
-use serde_json::json;
-use std::cmp::{max, Ordering, Reverse};
-use std::collections::BTreeMap;
+use std::cell::RefCell;
+use std::cmp::Ordering;
 use std::io::Write;
+use std::rc::Rc;
 
 pub fn encounter_entity_from_entity(entity: &Entity) -> EncounterEntity {
     let mut e = EncounterEntity {
@@ -747,7 +748,7 @@ pub fn map_status_effect(se: &StatusEffectDetails, custom_id_map: &mut HashMap<u
 
 pub fn is_valid_player(player: &EncounterEntity) -> bool {
     player.gear_score >= 0.0
-        && player.entity_type == EntityType::PLAYER
+        && player.entity_type == EntityType::Player
         && player.character_id != 0
         && player.class_id != 0
         && player.name != "You"
@@ -1209,4 +1210,72 @@ pub struct SupportBuffs {
     pub buff: f64,
     pub identity: f64,
     pub hyper: f64,
+}
+
+pub fn update_party(
+    party_tracker: &Rc<RefCell<PartyTracker>>,
+    entity_tracker: &EntityTracker,
+) -> Vec<Vec<String>> {
+    let mut party_info = HashMap::new();
+
+    for (entity_id, party_id) in &party_tracker.borrow().entity_id_to_party_id {
+        let members = party_info.entry(*party_id).or_insert_with(Vec::new);
+        if let Some(entity) = entity_tracker.entities.get(entity_id) {
+            if entity.character_id > 0
+                && entity.class_id > 0
+                && entity
+                    .name
+                    .chars()
+                    .next()
+                    .unwrap_or_default()
+                    .is_uppercase()
+            {
+                members.push(entity.name.clone());
+            }
+        }
+    }
+
+    let mut sorted_parties = party_info.into_iter().collect::<Vec<(u32, Vec<String>)>>();
+    sorted_parties.sort_unstable_by_key(|&(party_id, _)| party_id);
+    sorted_parties
+        .into_iter()
+        .map(|(_, members)| members)
+        .collect()
+}
+
+pub fn on_shield_change(
+    entity_tracker: &mut EntityTracker,
+    id_tracker: &Rc<RefCell<IdTracker>>,
+    state: &mut EncounterState,
+    status_effect: StatusEffectDetails,
+    change: u64,
+) {
+    if change == 0 {
+        return;
+    }
+    let source = entity_tracker.get_source_entity(status_effect.source_id);
+    let target_id = if status_effect.target_type == StatusEffectTargetType::Party {
+        id_tracker
+            .borrow()
+            .get_entity_id(status_effect.target_id)
+            .unwrap_or_default()
+    } else {
+        status_effect.target_id
+    };
+    let target = entity_tracker.get_source_entity(target_id);
+    state.on_boss_shield(&target, status_effect.value);
+    state.on_shield_used(&source, &target, status_effect.status_effect_id, change);
+}
+
+pub fn parse_pkt<T, F>(data: &[u8], new_fn: F, pkt_name: &str) -> Option<T>
+where
+    F: FnOnce(&[u8]) -> Result<T, anyhow::Error>,
+{
+    match new_fn(data) {
+        Ok(packet) => Some(packet),
+        Err(e) => {
+            warn!("Error parsing {}: {}", pkt_name, e);
+            None
+        }
+    }
 }

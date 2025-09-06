@@ -1,6 +1,4 @@
-use std::{sync::mpsc::{self, Receiver}, thread::{self, sleep}, time::Duration};
-use log::info;
-use lost_metrics_simulator::*;
+use std::{sync::mpsc::{self, Receiver}, thread::{self}};
 use meter_core_fake::packets::structures::SkillDamageEvent;
 use meter_core_fake::packets::opcodes::Pkt;
 
@@ -16,11 +14,9 @@ pub struct FakeReceiver {
 
 impl PacketReceiver for FakeReceiver {
     fn recv(&mut self) -> Result<(Pkt, Vec<u8>)> {
-        // Just call the standard receiver
         Ok(self.inner.recv()?)
     }
 }
-
 
 impl PacketSource<FakeReceiver> for FakePacketSource {
     fn start(&self, _port: u16) -> Result<FakeReceiver> {
@@ -31,12 +27,6 @@ impl PacketSource<FakeReceiver> for FakePacketSource {
             .name("fake-sniffer".to_string());
 
         let handle = builder.spawn(move || {
-            let delay = Duration::from_secs(1);
-
-            loop {
-                run_encounter(emitter.clone(), delay)?;
-            }
-
             anyhow::Ok::<()>(())
         })?;
 

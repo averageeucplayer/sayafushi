@@ -1,6 +1,7 @@
-use crate::app::compat::Command;
 use anyhow::Result;
 use log::{info, warn};
+
+use crate::{autostart::compat::Command, constants::TASK_NAME};
 
 pub struct AutoLaunchManager {
     task_name: String,

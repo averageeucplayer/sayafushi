@@ -27,16 +27,11 @@ try {
 
     Write-Output "TAURI_SIGNING_PRIVATE_KEY_PASSWORD: $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD"
     Write-Output "WINDOWS_CERTIFICATE_PASSWORD: $env:WINDOWS_CERTIFICATE_PASSWORD"
-    cargo tauri build --features "production"
+    $env:RUST_LOG="tauri=debug"
+    $env:TAURI_LOG_LEVEL="debug"
 
-    <#
-        & "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe" sign `
-            /n "Sayafushi" `
-            /tr "http://timestamp.digicert.com" `
-            /td sha256 `
-            /fd sha256 `
-            "app\target\release\Sayafushi.exe"
-    #>
+    cargo tauri build --verbose --debug --features "production"
+
 } catch {
     Write-Error "An error occurred: $_"
 }

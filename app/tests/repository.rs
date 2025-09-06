@@ -1,6 +1,6 @@
 use chrono::{Local, Utc};
 use hashbrown::{HashMap, HashSet};
-use sayafushi_lib::{database::{models::{GetEncounterPreviewArgs, InsertEncounterArgs}, Database}, parser::models::*};
+use sayafushi_lib::{database::{models::{GetEncounterPreviewArgs, InsertEncounterArgs}, Database}, models::*};
 use rand::{rngs::ThreadRng, Rng};
 
 fn test_db() -> String {
@@ -192,7 +192,7 @@ impl RaidBuilder {
 
         let mut encounter_entities_with_stats = HashMap::new();
         for (name, mut e) in entities.into_iter() {
-            if e.entity_type == EntityType::PLAYER {
+            if e.entity_type == EntityType::Player {
                 update_skill_and_damage_stats(&mut self.rng, &mut e);
             }
             encounter_entities_with_stats.insert(name, e);
@@ -270,7 +270,7 @@ impl RaidBuilder {
             character_id: 0,
             npc_id: self.boss_npc_id,
             name: self.boss_name.clone(),
-            entity_type: EntityType::BOSS,
+            entity_type: EntityType::Boss,
             class_id: 0,
             class: String::new(),
             gear_score: 0.0,
@@ -349,7 +349,7 @@ fn generate_entities_for_parties(
                 character_id: idx as u64 + 101,
                 npc_id: 0,
                 name: name.clone(),
-                entity_type: EntityType::PLAYER,
+                entity_type: EntityType::Player,
                 class_id: spec.class_id,
                 class: spec.class_name.clone(),
                 gear_score: spec.gear_score,

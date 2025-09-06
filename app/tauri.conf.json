@@ -12,7 +12,8 @@
     "copyright": "GNU General Public License v3.0",
     "resources": [
       "meter-data/*.json",
-      "migrations/*.sql"
+      "migrations/*.sql",
+      "settings.template.json"
     ],
     "icon": [
       "icons/icon.ico"
@@ -26,7 +27,7 @@
   "identifier": "xyz.sayafushi",
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDZEODU5MzNEODY0ODg0REEKUldUYWhFaUdQWk9GYlczc3VSODJPK01RRTlYUER6NzU0eDE1WDYwcmJsY1d4d2EwblZHNlJ4dW8K",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEYzNjQ2NTA0RUVFRDc3NjQKUldSa2QrM3VCR1ZrOHk0UENlT1MxRFcxUHY3YTh5MXhzbmRQUjJPd3ZJQmk1eXU0NDgvNUFBWWgK",
       "endpoints": [
         "https://github.com/averageeucplayer/sayafushi/releases/latest/download/latest.json"
       ]

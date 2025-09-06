@@ -1,6 +1,49 @@
-use std::panic::set_hook;
+use std::{panic::set_hook, path::Path};
+use flexi_logger::{
+    Cleanup, Criterion, DeferredNow, Duplicate, FileSpec, Logger, Naming, WriteMode,
+};
+use log::*;
 
-use log::error;
+pub fn setup_logger(log_dir: &Path) {
+
+    let logger = Logger::try_with_str("info, tao=off")
+        .unwrap()
+        .log_to_file(
+            FileSpec::default()
+                .suppress_timestamp()
+                .basename("loa_logs")
+                .directory(log_dir),
+        )
+        .use_utc()
+        .write_mode(WriteMode::BufferAndFlush)
+        .append()
+        .format(default_format_with_time)
+        .rotate(
+            Criterion::Size(5_000_000),
+            Naming::Timestamps,
+            Cleanup::KeepLogFiles(2),
+        );
+
+    #[cfg(debug_assertions)]
+    {
+        let _ = logger.duplicate_to_stdout(Duplicate::All);
+    }
+}
+
+fn default_format_with_time(
+    w: &mut dyn std::io::Write,
+    now: &mut DeferredNow,
+    record: &Record,
+) -> Result<(), std::io::Error> {
+    write!(
+        w,
+        "[{}] {} [{}] {}",
+        now.format("%Y-%m-%dT%H:%M:%S%.6fZ"),
+        record.level(),
+        record.module_path().unwrap_or("<unnamed>"),
+        record.args()
+    )
+}
 
 pub fn setup_panic_hook() {
     set_hook(Box::new(|info| {

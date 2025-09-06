@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Fragment>
+	 	<DirectoryRef Id="TARGETDIR">
+			<Component Id="MyFragmentRegistryEntries" Guid="25dd2407-75b0-431f-9eb8-7ec3ca799f9a">
+				<RemoveFile Id="WinDivert64sys"
+                    Name="WinDivert64.sys"
+                    On="uninstall"
+                    Directory="TARGETDIR"/>
+			</Component>
+		</DirectoryRef>
+	</Fragment>
+</Wix>

@@ -11,6 +11,7 @@ pub const METER_MINI_WINDOW_LABEL: &str = "mini";
 pub const LOGS_WINDOW_LABEL: &str = "logs";
 pub const DATABASE_PATH: &str = "encounters.db";
 pub const MIGRATIONS_PATH: &str = "migrations";
+pub const DEFAULT_SETTINGS_PATH: &str = "settings.template.json";
 pub const SETTINGS_PATH: &str = "settings.json";
 pub const LOCAL_PLAYERS_PATH: &str = "local_players.json";
 pub const REGION_PATH: &str = "current_region";

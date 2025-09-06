@@ -3,7 +3,7 @@ use tauri::ipc::Invoke;
 use tauri::{command, generate_handler, AppHandle, Emitter, Manager, State, Window};
 use window_vibrancy::{apply_blur, clear_blur};
 
-use crate::app::autostart::{AutoLaunch, AutoLaunchManager};
+use crate::autostart::{AutoLaunch, AutoLaunchManager};
 use crate::constants::*;
 use crate::data::AssetPreloader;
 use crate::database::models::{GetEncounterPreviewArgs, InsertSyncLogsArgs};
@@ -11,7 +11,7 @@ use crate::database::{Database, Repository};
 use crate::ui::AppHandleExtensions;
 use crate::handlers::error::AppError;
 use crate::handlers::models::LoadResult;
-use crate::parser::models::*;
+use crate::models::*;
 use crate::settings::{Settings, SettingsManager};
 use crate::shell::ShellManager;
 use crate::updater::UpdateManager;

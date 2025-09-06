@@ -1,8 +1,22 @@
 use anyhow::Result;
 use uuid::Uuid;
 use std::{fs::File, path::PathBuf};
+use hashbrown::HashMap;
+use serde::{Deserialize, Serialize};
 
-use crate::live::models::LocalInfo;
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct LocalInfo {
+    pub client_id: String,
+    pub local_players: HashMap<u64, LocalPlayer>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct LocalPlayer {
+    pub name: String,
+    pub count: i32,
+}
 
 pub struct LocalPlayerRepository(PathBuf);
 

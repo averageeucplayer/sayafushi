@@ -2,13 +2,13 @@ use std::time::{Duration, Instant};
 
 use log::*;
 use reqwest::Client;
-use serde_json::json;
-pub const API_URL: &str = "https://api.snow.xyz";
+use serde::Serialize;
 
-pub struct HeartbeatSendArgs {
-    pub client_id: String,
-    pub version: String,
-    pub region: Option<String>
+#[derive(Debug, Clone, Serialize)]
+pub struct HeartbeatSendArgs<'a> {
+    pub id: &'a str,
+    pub version: &'a str,
+    pub region: &'a str
 }
 
 pub trait HeartbeatApi {
@@ -17,6 +17,7 @@ pub trait HeartbeatApi {
 }
 
 pub struct SnowHeartbeatApi {
+    base_url: String,
     client: Client,
     last_heartbeat: Instant,
     heartbeat_duration: Duration
@@ -29,28 +30,14 @@ impl HeartbeatApi for SnowHeartbeatApi {
 
     fn send(&mut self, args: HeartbeatSendArgs) {
 
-        let HeartbeatSendArgs {
-            client_id,
-            region,
-            version
-        } = args;
-
         let client = self.client.clone();
-        let region = match region {
-            Some(ref region) => region.clone(),
-            None => return,
-        };
+        let url = format!("{}/analytics/heartbeat", self.base_url);
+        let json = serde_json::to_value(args).unwrap();
 
         tokio::task::spawn(async move {
-            let request_body = json!({
-                "id": client_id,
-                "version": version,
-                "region": region,
-            });
-
             match client
-                .post(format!("{API_URL}/analytics/heartbeat"))
-                .json(&request_body)
+                .post(url)
+                .json(&json)
                 .send()
                 .await
             {
@@ -68,11 +55,12 @@ impl HeartbeatApi for SnowHeartbeatApi {
 }
 
 impl SnowHeartbeatApi {
-    pub fn new() -> Self {
+    pub fn new(base_url: String) -> Self {
         let client = Client::new();
         let last_heartbeat = Instant::now();
         let heartbeat_duration = Duration::from_secs(60 * 15);
         Self {
+            base_url,
             client,
             last_heartbeat,
             heartbeat_duration
@@ -91,7 +79,7 @@ impl HeartbeatApi for FakeHeartbeatApi {
     }
 
     fn send(&mut self, args: HeartbeatSendArgs) {
-        info!("heartbeat client_id: {} region: {:?} version: {}", args.client_id, args.region, args.version);
+        info!("heartbeat client_id: {} region: {:?} version: {}", args.id, args.region, args.version);
         self.last_heartbeat = Instant::now();
     }
 }

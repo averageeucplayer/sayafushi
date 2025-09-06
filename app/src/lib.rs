@@ -1,11 +1,12 @@
 #[allow(unused_imports)]
 
-mod app;
+mod autostart;
+mod abstractions;
 mod live;
 mod misc;
 mod context;
 mod constants;
-pub mod parser;
+pub mod models;
 pub mod database;
 mod handlers;
 mod setup;
@@ -16,28 +17,33 @@ mod background;
 mod data;
 mod updater;
 mod ui;
+mod api;
+mod local;
 
 use anyhow::Result;
 use tauri::Context;
 
-use crate::app::autostart::AutoLaunchManager;
+use crate::autostart::AutoLaunchManager;
 use crate::constants::*;
 use crate::context::AppContext;
 use crate::database::Database;
 use crate::handlers::generate_handlers;
 use crate::data::AssetPreloader;
-use crate::logger::setup_panic_hook;
+use crate::local::LocalPlayerRepository;
+use crate::logger::{setup_logger, setup_panic_hook};
 use crate::misc::load_windivert;
 use crate::settings::SettingsManager;
 use crate::ui::on_window_event;
 use crate::setup::setup;
+use log::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() -> Result<()> {
-    app::init();
     let tauri_context: Context = tauri::generate_context!();
     let package_info = tauri_context.package_info();
     let context = AppContext::new(package_info.version.to_string())?;
+    // setup_logger(&context.current_dir);
+    setup_panic_hook();
     load_windivert(&context.current_dir).expect("could not load windivert dependencies");
     let auto_launch_manager = AutoLaunchManager::new(
         &package_info.name,
@@ -50,8 +56,18 @@ pub fn run() -> Result<()> {
         &context.version
     ).expect("error setting up database: {}");
     let repository = database.create_repository();
+    let local_player = LocalPlayerRepository::new(context.local_player_path.clone())?;
 
-    setup_panic_hook();
+    let log_builder = tauri_plugin_log::Builder::new()
+        .level(log::LevelFilter::Info)
+        .level_for("tao::platform_impl::platform::event_loop::runner", LevelFilter::Error)
+        .max_file_size(5_000_000)
+        .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
+        .target(tauri_plugin_log::Target::new(
+            tauri_plugin_log::TargetKind::LogDir {
+                file_name: Some("loa_logs".to_string()),
+            },
+        ));
 
     tauri::Builder::default()
         .manage(loader)
@@ -59,6 +75,8 @@ pub fn run() -> Result<()> {
         .manage(repository)
         .manage(settings_manager)
         .manage(auto_launch_manager)
+        .manage(local_player)
+        .plugin(log_builder.build())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
