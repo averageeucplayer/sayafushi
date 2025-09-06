@@ -1,5 +1,6 @@
 use anyhow::Result;
 
+#[cfg(target_os = "windows")]
 mod compat;
 #[cfg(target_os = "linux")]
 mod linux;
